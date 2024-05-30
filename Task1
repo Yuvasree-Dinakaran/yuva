@@ -1,0 +1,38 @@
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import classification_report, accuracy_score
+
+# Step 1: Data Collection
+url = "https://raw.githubusercontent.com/justmarkham/pycon-2016-tutorial/master/data/sms.tsv"
+sms_data = pd.read_csv(url, sep='\t', header=None, names=['label', 'message'])
+
+# Step 2: Data Preprocessing
+sms_data['label'] = sms_data['label'].map({'ham': 0, 'spam': 1})
+
+# Step 3: Feature Extraction
+tfidf = TfidfVectorizer(stop_words='english')
+X = tfidf.fit_transform(sms_data['message'])
+y = sms_data['label']
+
+# Step 4: Model Training
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+svm = SVC(kernel='linear')
+svm.fit(X_train, y_train)
+
+# Step 5: Model Evaluation
+y_pred = svm.predict(X_test)
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Classification Report:")
+print(classification_report(y_test, y_pred))
+
+# Step 6: Prediction
+def classify_sms(message):
+    message_transformed = tfidf.transform([message])
+    prediction = svm.predict(message_transformed)
+    return 'spam' if prediction[0] == 1 else 'ham'
+
+# Example usage
+new_message = "Congratulations! You've won a $1000 Walmart gift card. Call now!"
+print("The message is classified as:", classify_sms(new_message))
